@@ -1,18 +1,14 @@
 let canvasWidth = 800;
 let canvasHeight = 400;
 let nodes = [];
-let nodeDistance = 100;
+let nodeDistance = 150;
 let dataInput;
 
 function setup() {
   createCanvas(canvasWidth, canvasHeight);
 
-  // Input field for node data
-  dataInput = createInput("");
-  dataInput.position(10, canvasHeight + 10);
-
-  let btn = createButton("Add Node");
-  btn.position(dataInput.x + dataInput.width + 10, canvasHeight + 10);
+  let btn = createButton("Add Random Node");
+  btn.position(10, canvasHeight + 10);
   btn.mousePressed(addNode);
 }
 
@@ -30,19 +26,8 @@ function draw() {
 }
 
 function addNode() {
-  let nodeValue = dataInput.value(); // Grab value from the input field
-
-  // Check if the value is an integer with 1 to 3 digits
-  if (nodeValue !== "" && isLessThanThreeDigitInteger(nodeValue)) {
-    nodes.push(new Node(nodeValue));
-    dataInput.value(""); // Clear the input field
-  } else {
-    alert("Please enter an integer with up to 3 digits.");
-  }
-}
-
-function isLessThanThreeDigitInteger(str) {
-  return /^\d{1,3}$/.test(str);
+  let nodeValue = floor(random(1, 1000)); // Generates a random integer between 1 and 999
+  nodes.push(new Node(nodeValue.toString())); // Convert the number to a string and push it to the nodes array
 }
 
 function drawArrow(x1, y1, x2, y2) {
@@ -85,7 +70,7 @@ function drawLink(node1, node2) {
   stroke(0);
   let linkLength = dist(node1.x, node1.y, node2.x, node2.y);
   let arrowSize = 10;
-  let ratio = (linkLength - arrowSize - 25) / linkLength; // Subtract the node radius (25 if diameter is 50) and arrow size
+  let ratio = (linkLength - arrowSize - 55) / linkLength; // Subtract the node radius (25 if diameter is 50) and arrow size
 
   // Calculate the endpoint taking into account the arrow size and node size
   let endX = lerp(node1.x, node2.x, ratio);
@@ -106,13 +91,26 @@ class Node {
   constructor(value) {
     this.value = value;
 
-    // If there are nodes present, set the new node's position relative to the last node
     if (nodes.length > 0) {
       let lastNode = nodes[nodes.length - 1];
-      this.x = lastNode.x + nodeDistance; // added nodeDistance to space out the nodes
-      this.y = lastNode.y;
+      this.x = lastNode.x + nodeDistance;
+
+      // If the new node's x position goes beyond canvas width,
+      // reset x to the start and move y down by a certain amount (e.g., 60 pixels).
+      if (this.x + 25 > canvasWidth) {
+        // 25 is half the diameter of the node
+        this.x = 25;
+        this.y = lastNode.y + 60;
+      } else {
+        this.y = lastNode.y;
+      }
+
+      // If y goes beyond canvas height, reset to the top.
+      if (this.y + 25 > canvasHeight) {
+        this.y = 25;
+      }
     } else {
-      // If no nodes are present, set it to the center of the canvas
+      // Initial position for the first node
       this.x = width / 2;
       this.y = height / 2;
     }
@@ -147,9 +145,20 @@ class Node {
   display() {
     fill(255);
     stroke(0);
-    ellipse(this.x, this.y, 50, 50);
+
+    // Draw the "data" rectangle
+    rect(this.x - 50, this.y - 25, 50, 50);
+
+    // Draw the "next" rectangle
+    rect(this.x, this.y - 25, 50, 50);
+
     fill(0);
     textAlign(CENTER, CENTER);
-    text(this.value, this.x, this.y);
+
+    // Display the value in the "data" rectangle
+    text(this.value, this.x - 25, this.y);
+
+    // Display 'next' in the "next" rectangle (optional)
+    text("next", this.x + 25, this.y);
   }
 }
